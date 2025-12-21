@@ -124,12 +124,12 @@ def generate_transactions(customers_df, merchants_df, n=NUM_TRANSACTIONS):
 
             if is_fraud:
                 status = random.choices(
-                    ['approved', 'declined', 'under_review'],
+                    ['completed', 'failed', 'cancelled'],
                     weights=[0.30, 0.50, 0.20]
                 )[0]
             else:
                 status = random.choices(
-                    ['approved', 'declined', 'pending'],
+                    ['completed', 'failed', 'pending'],
                     weights=[0.94, 0.04, 0.02]
                 )[0]
 
@@ -138,7 +138,6 @@ def generate_transactions(customers_df, merchants_df, n=NUM_TRANSACTIONS):
                 'customer_id': customer_id,
                 'merchant_id': random.choice(merchant_ids),
                 'transaction_date': trans_date,
-                'transaction_time': trans_date.strftime('%H:%M:%S'),
                 'amount': round(base_amount, 2),
                 'currency': random.choices(['PEN', 'USD'], weights=[0.85, 0.15])[0],
                 'transaction_type': trans_type,

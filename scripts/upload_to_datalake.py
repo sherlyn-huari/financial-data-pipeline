@@ -127,6 +127,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-#Run Databricks notebooks for transformation
-#Check Azure Portal to verify data

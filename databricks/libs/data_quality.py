@@ -123,22 +123,66 @@ class DataQualityReport:
             summary += f"{status} {check_name}: {check_data['result']}\n"
 
         return summary
-def run_transaction_quality_checks(df: DataFrame) -> DataQualityReport:
-
-    #nulls check
+    
+def run_bronze_quality_checks(df: DataFrame, key_columns: List[str], expected_schema: Dict[str, str]) -> DataQualityReport:
     report = DataQualityReport()
-    null_counts = check_null_counts(df,['transaction_id', 'amount', 'customer_id'])
+
+    row_count = df.count()
+    report.add_check("Row Count", f"{row_count} rows", True)
+
+    null_counts = check_null_counts(df, key_columns)
     total_nulls = sum(null_counts.values())
-    report.add_check("Critical Nulls Check", 
-                     f"{total_nulls} null found in critical columns",
+    report.add_check("Null Tracking", f"{total_nulls} nulls in key columns", True)
+
+    duplicates = check_duplicate_keys(df, key_columns)
+    report.add_check("Duplicate Tracking", f"{duplicates} duplicates", True)
+
+    drift = detect_schema_drift(df, expected_schema)
+    has_drift = (len(drift['missing_columns']) > 0 or
+                 len(drift['extra_columns']) > 0 or
+                 len(drift['type_mismatches']) > 0)
+    report.add_check("Schema Drift", f"{drift}", not has_drift)
+
+    return report
+
+def run_silver_transaction_quality_checks(df: DataFrame) -> DataQualityReport:
+    report = DataQualityReport()
+
+    null_counts = check_null_counts(df,['transaction_id','amount', 'customer_id', 'merchant_id'])
+    total_nulls = sum(null_counts.values())
+    report.add_check("Critical Nulls Check",
+                     f"{total_nulls} nulls found",
                      total_nulls == 0)
-    
 
+    duplicates = check_duplicate_keys(df, ['transaction_id'])
+    report.add_check("Duplicate Keys Check",
+                     f"{duplicates} duplicates",
+                     duplicates == 0)
 
+    if 'amount' in df.columns:
+        invalid_amounts = check_value_ranges(df, 'amount', 0.01, 10000000)
+        report.add_check("Amount Range Check", f"{invalid_amounts} out of range", invalid_amounts == 0)
 
-    return report 
+    if 'status' in df.columns:
+        invalid_statuses = check_allowed_values(
+            df,
+            'status',
+            ['pending', 'completed', 'failed', 'cancelled']
+        )
+        report.add_check(
+            "Status Values Check",
+            f"Invalid: {invalid_statuses}" if invalid_statuses else "All valid",
+            len(invalid_statuses) == 0
+        )
 
+    completeness = calculate_completeness_score(
+        df,
+        ['transaction_id', 'amount', 'customer_id', 'transaction_date']
+    )
+    report.add_check(
+        "Completeness Score",
+        f"{completeness:.2f}%",
+        completeness >= 95.0
+    )
 
-if __name__ == "__main__":
-    
-
+    return report

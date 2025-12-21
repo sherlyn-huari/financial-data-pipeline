@@ -1,11 +1,18 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, input_file_name, lit
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType, DateType, BooleanType
 import os
-from dotenv import load_dotenv
 import sys
-sys.path.append('/Workspace/Repos/databricks/libs')
-from data_quality import run_transaction_quality_checks
+from pathlib import Path
+from dotenv import load_dotenv
+
+if os.path.exists('/Workspace'):
+    sys.path.insert(0, '/Workspace/Repos/databricks/libs')
+else:
+    libs_path = Path(__file__).parent.parent.parent / "libs"
+    sys.path.insert(0, str(libs_path))
+
+from data_quality import run_bronze_quality_checks
 
 spark: SparkSession
 
@@ -16,11 +23,23 @@ transaction_schema = StructType([
     StructField("transaction_id", StringType(), False),
     StructField("customer_id", StringType(), True),
     StructField("merchant_id", StringType(), True),
+    StructField("transaction_date", StringType(), True),
     StructField("amount", DoubleType(), True),
     StructField("currency", StringType(), True),
-    StructField("transaction_date", StringType(), True),
+    StructField("transaction_type", StringType(), True),
+    StructField("channel", StringType(), True),
+    StructField("device_id", StringType(), True),
+    StructField("ip_address", StringType(), True),
+    StructField("location_lat", DoubleType(), True),
+    StructField("location_lon", DoubleType(), True),
+    StructField("card_type", StringType(), True),
+    StructField("card_last_4", IntegerType(), True),
     StructField("status", StringType(), True),
-    StructField("payment_method", StringType(), True)
+    StructField("is_fraud", BooleanType(), True),
+    StructField("fraud_reason", StringType(), True),
+    StructField("processing_fee", DoubleType(), True),
+    StructField("created_at", DateType(), True),
+    StructField("updated_at", DateType(), True)
 ])
 
 source_path = f"abfss://bronze@{STORAGE_ACCOUNT_NAME}.dfs.core.windows.net/raw/transactions/*.csv"
@@ -41,7 +60,8 @@ bronze_transactions = (transactions_df
 
 bronze_transactions.show(5, truncate=False)
 
-quality_report = run_transaction_quality_checks(bronze_transactions)
+expected_schema = {field.name: field.dataType.simpleString() for field in transaction_schema.fields}
+quality_report = run_bronze_quality_checks(bronze_transactions, ['transaction_id'], expected_schema)
 print(quality_report.get_summary())
 
 (bronze_transactions.write

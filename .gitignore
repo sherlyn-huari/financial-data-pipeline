@@ -11,3 +11,7 @@ ___pycache__/
 .env.*
 *.env
 
+# IDE
+.vscode/
+.idea/
+
