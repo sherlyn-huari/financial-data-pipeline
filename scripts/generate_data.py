@@ -26,7 +26,7 @@ def generate_customers(n=NUM_CUSTOMERS):
             'dni': fake.random_number(digits=8,fix_len=True),
             'date_of_birth': fake.date_of_birth(minimum_age=18, maximum_age=70),
             'registration_date': reg_date,
-            'city': fake.city(),
+            'city': 'Lima',
             'district': random.choice([
                 'San Isidro', 'Miraflores', 'Surco',
                 'La Molina', 'San Borja', 'Jesús María'

@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, input_file_name, lit
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, DateType,BooleanType
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, DateType, BooleanType
 import os
 import sys
 from pathlib import Path
@@ -35,7 +35,7 @@ customer_schema = StructType([
     StructField("risk_score", IntegerType(), True),
     StructField("account_balance", DoubleType(), True),
     StructField("credit_limit", DoubleType(), True),
-    StructField("is_active", BooleanType(), True),
+    StructField("is_active", BooleanType(), False),
     StructField("created_at", DateType(), True),
     StructField("updated_at", DateType(), True)
 ])
@@ -59,7 +59,7 @@ bronze_customers = (customers_df
 bronze_customers.show(5, truncate=False)
 
 expected_schema = {field.name: field.dataType.simpleString() for field in customer_schema.fields}
-quality_report = run_bronze_quality_checks(bronze_customers, ['customer_id', 'dni'], expected_schema)
+quality_report = run_bronze_quality_checks(bronze_customers, ['customer_id', 'dni', 'is_active'], expected_schema)
 print(quality_report.get_summary())
 
 (bronze_customers.write

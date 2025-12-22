@@ -32,17 +32,6 @@ def check_value_ranges(df: DataFrame, column: str, min_val: float, max_val: floa
 
     return out_of_range
 
-
-def check_date_freshness(df: DataFrame, date_column: str, max_age_days: int) -> int:
-    cutoff_date = datetime.now().date()
-
-    stale_records = df.filter(
-        F.datediff(F.lit(cutoff_date), F.col(date_column)) > max_age_days
-    ).count()
-
-    return stale_records
-
-
 def check_allowed_values(df: DataFrame, column: str, allowed_values: List) -> Dict:
 
     actual_values = [row[column] for row in df.select(column).distinct().collect()] 
@@ -66,21 +55,6 @@ def check_referential_integrity(df_child: DataFrame, df_parent: DataFrame, child
     ).count()
 
     return orphaned
-
-def calculate_completeness_score(df: DataFrame, important_columns: List[str])-> float:
-    total_cells = df.count() * len(important_columns)
-
-    if total_cells == 0:
-        return 0.0
-    
-    non_null_count = 0
-    for col in important_columns:
-        if col in df.columns:
-            non_null_count += df.filter(F.col(col).isNotNull()).count()
-    
-    completeness = (non_null_count / total_cells) * 100
-
-    return completeness
 
 def detect_schema_drift( current_df: DataFrame, expected_schema: Dict[str, str]) -> Dict[str, List[str]]:
     current_schema = {field.name: field.dataType.simpleString() for field in current_df.schema.fields}
