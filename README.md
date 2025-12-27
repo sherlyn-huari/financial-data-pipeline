@@ -1,5 +1,4 @@
-# Financial Data Platform
-
+# Financial Data Pipeline
 A data pipeline that processes financial transactions using PySpark and Delta Lake on Azure.
 
 ## What It Does
