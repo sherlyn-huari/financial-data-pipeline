@@ -13,23 +13,33 @@ fake = Faker(['es_PE'])
 random.seed(42)
 np.random.seed(42)
 
+def generate_peruvian_ip():
+    prefixes = [
+        '181.176', '181.177', '181.178',  
+        '190.232', '190.233',             
+        '190.236', '190.237',             
+        '200.48', '200.49',          
+        '181.64', '181.65',        
+    ]
+    prefix = random.choice(prefixes)
+    return f"{prefix}.{random.randint(0, 255)}.{random.randint(1, 254)}"
+
 def generate_customers(n: int=NUM_CUSTOMERS) -> pd.DataFrame:
     customers = []
     for i in range(n):
-        reg_date = fake.date_between(start_date='-5y', end_date='-1y')
+        reg_date = fake.date_between(start_date='-2y', end_date='-1y')
         customers.append({
             'customer_id': f'CUST{i:08d}',
             'first_name': fake.first_name(),
             'last_name': fake.last_name(),
             'email':fake.email(),
-            'phone':fake.phone_number(),
+            'phone': f"+51 9{random.randint(10000000, 99999999)}",
             'dni': fake.random_number(digits=8,fix_len=True),
             'date_of_birth': fake.date_of_birth(minimum_age=18, maximum_age=70),
             'registration_date': reg_date,
             'city': 'Lima',
             'district': random.choice([
-                'San Isidro', 'Miraflores', 'Surco',
-                'La Molina', 'San Borja', 'Jesús María'
+                'San Isidro', 'San Borja', 'Jesús María'
             ]),
             'country': 'Peru',
             'customer_segment': random.choices(
@@ -39,41 +49,74 @@ def generate_customers(n: int=NUM_CUSTOMERS) -> pd.DataFrame:
             'risk_score': round(random.uniform(0,1), 4),
             'account_balance': round(random.lognormvariate(8,2), 2),
             'credit_limit': round(random.lognormvariate(9, 1.5), 2),
-            'is_active': random.choices([1,0], weights=[0.95, 0.05])[0],
-            'created_at': reg_date
+            'is_active': random.choices([1,0], weights=[0.95, 0.05])[0]
             })
     return pd.DataFrame(customers)
 
 def generate_merchants(n: int=NUM_MERCHANTS) -> pd.DataFrame:
-    categories = [
-        'Retail','Restaurants & Fast Food','E-commerce & Online Services',
-        'Transportation','Utilities','Health & Pharmacies', 
-        'Education','Entertainment','Financial Services']
-   
-    merchants = []
+    merchant_configs = {
+        'Retail': {
+            'names': ['Wong', 'Plaza Vea'],
+            'mcc': 5411
+        },
+        'Restaurants': {
+            'names': ['Pardos Chicken', 'Bembos'],
+            'mcc': 5812
+        },
+        'Online Services': {
+            'names': ['Rappi', 'PedidosYa', 'Mercado Libre'],
+            'mcc': 5967
+        },
+        'Transportation': {
+            'names': ['Uber'],
+            'mcc': 4121
+        },
+        'Utilities': {
+            'names': ['Luz del Sur', 'Sedapal','Entel'],
+            'mcc': 4900
+        },
+        'Health & Pharmacies': {
+            'names': ['InKafarma', 'Mifarma'],
+            'mcc': 5912
+        },
+        'Education': {
+            'names': ['PUCP', 'UPC'],
+            'mcc': 8220
+        },
+        'Entertainment': {
+            'names': ['Cineplanet'],
+            'mcc': 7832
+        },
+        'Financial Services': {
+            'names': ['BCP', 'BBVA', 'Yape', 'Plin'],
+            'mcc': 6011
+        }
+    }
 
+    merchants = []
     for i in range(n):
+        category = random.choice(list(merchant_configs.keys()))
+        config = merchant_configs[category]
+
+        merchant_name = random.choice(config['names'])
+
         merchants.append({
-            'merchant_id':f'MERCH{i:06d}',
-            'merchant_name': fake.company(),
-            'category': random.choice(categories),
-            'mcc_code': random.randint(1000,9999),
-            'city': fake.city(),
+            'merchant_id': f'MERCH{i:06d}',
+            'merchant_name': merchant_name,
+            'category': category,
+            'mcc_code': config['mcc'],
+            'city': 'Lima',
             'country': 'Peru',
             'is_verified': random.choices([1, 0], weights=[0.9, 0.1])[0],
             'registration_date': fake.date_between(start_date="-3y", end_date='now')
-            })
-        
+        })
+
     return pd.DataFrame(merchants)
 
 def generate_transactions(customers_df: pd.DataFrame, merchants_df: pd.DataFrame, n: int=NUM_TRANSACTIONS) -> pd.DataFrame:
 
     customer_ids = customers_df['customer_id'].tolist()
     merchant_ids = merchants_df['merchant_id'].tolist()
-
-    high_risk_customers = customers_df[
-        customers_df['risk_score'] > 0.8
-    ]['customer_id'].tolist()
 
     transactions = []
     batch_size = 10000
@@ -83,54 +126,30 @@ def generate_transactions(customers_df: pd.DataFrame, merchants_df: pd.DataFrame
 
         for i in range(batch_num, min(batch_num + batch_size, n)):
 
-            is_high_risk = random.random() < 0.05
-            customer_id = random.choice(
-                high_risk_customers if is_high_risk and high_risk_customers else customer_ids
-            )
-
+            customer_id = random.choice(customer_ids)
             trans_date = fake.date_time_between(start_date='-12M', end_date='now')
 
             trans_type = random.choices(
                 ['purchase', 'withdrawal', 'transfer', 'payment', 'refund'],
                 weights=[0.50, 0.20, 0.15, 0.10, 0.05]
             )[0]
-            
+
             if trans_type == 'withdrawal':
                 base_amount = random.choice([100, 200, 300, 500, 1000])
             else:
                 base_amount = random.lognormvariate(4, 1.5)
-            
-            is_fraud = 0
-            fraud_reason = None
 
-            if base_amount > 5000 and random.random() < 0.3:
-                is_fraud = 1
-                fraud_reason = 'high_amount'
-                base_amount *= random.uniform(2, 5)
-            
-            if random.random() < 0.01:
-                is_fraud = 1
-                fraud_reason = 'high_velocity'
-
-            if is_high_risk and random.random() < 0.05:
-                is_fraud = 1
-                fraud_reason = 'high_risk_customer'
+            is_fraud = 1 if random.random() < 0.02 else 0
 
             channel = random.choices(
                 ['online', 'mobile', 'atm', 'branch', 'pos', 'agent'],
                 weights=[0.25, 0.30, 0.10, 0.08, 0.20, 0.07]
             )[0]
 
-            if is_fraud:
-                status = random.choices(
-                    ['completed', 'failed', 'cancelled'],
-                    weights=[0.30, 0.50, 0.20]
-                )[0]
-            else:
-                status = random.choices(
-                    ['completed', 'failed', 'pending'],
-                    weights=[0.94, 0.04, 0.02]
-                )[0]
+            status = random.choices(
+                ['completed', 'failed'],
+                weights=[0.95, 0.05]
+            )[0]
 
             transaction = {
                 'transaction_id': f'TXN{i:012d}',
@@ -142,17 +161,14 @@ def generate_transactions(customers_df: pd.DataFrame, merchants_df: pd.DataFrame
                 'transaction_type': trans_type,
                 'channel': channel,
                 'device_id': fake.uuid4() if channel in ['online', 'mobile'] else None,
-                'ip_address': fake.ipv4() if channel in ['online', 'mobile'] else None,
+                'ip_address': generate_peruvian_ip() if channel in ['online', 'mobile'] else None,
                 'location_lat': round(random.uniform(-12.2, -11.9), 6),
                 'location_lon': round(random.uniform(-77.2, -76.8), 6),
                 'card_type': random.choice(['credit', 'debit', None]),
                 'card_last_4': random.randint(1000, 9999) if random.random() < 0.7 else None,
                 'status': status,
                 'is_fraud': is_fraud,
-                'fraud_reason': fraud_reason,
-                'processing_fee': round(base_amount * random.uniform(0.01, 0.03), 2),
-                'created_at': trans_date,
-                'updated_at': trans_date
+                'processing_fee': round(base_amount * random.uniform(0.01, 0.03), 2)
             }
 
             batch_transactions.append(transaction)

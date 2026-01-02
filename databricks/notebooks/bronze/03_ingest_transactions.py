@@ -12,7 +12,7 @@ else:
     libs_path = Path(__file__).parent.parent.parent / "libs"
     sys.path.insert(0, str(libs_path))
 
-from data_quality import add_quality_flags_transactions, generate_quality_summary, print_quality_summary
+from bronze_check import add_quality_flags_transactions, generate_quality_summary, print_quality_summary
 
 spark: SparkSession
 
@@ -38,8 +38,7 @@ transaction_schema = StructType([
     StructField("is_fraud", BooleanType(), True),
     StructField("fraud_reason", StringType(), True),
     StructField("processing_fee", DoubleType(), True),
-    StructField("created_at", DateType(), True),
-    StructField("updated_at", DateType(), True)
+    StructField("created_at", DateType(), True)
 ])
 
 source_path = f"abfss://bronze@{STORAGE_ACCOUNT_NAME}.dfs.core.windows.net/raw/transactions/*.csv"

@@ -11,7 +11,7 @@ else:
     libs_path = Path(__file__).parent.parent.parent / "libs"
     sys.path.insert(0, str(libs_path))
 
-from data_quality import validate_silver_transactions
+from silver_check import add_quality_flags_transactions, generate_quality_summary, print_quality_summary
 
 spark: SparkSession
 

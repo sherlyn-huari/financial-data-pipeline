@@ -12,7 +12,7 @@ else:
     libs_path = Path(__file__).parent.parent.parent / "libs"
     sys.path.insert(0, str(libs_path))
 
-from data_quality import add_quality_flags_customers, generate_quality_summary, print_quality_summary
+from bronze_check import add_quality_flags_customers, generate_quality_summary, print_quality_summary
 
 spark: SparkSession
 
@@ -36,8 +36,7 @@ customer_schema = StructType([
     StructField("account_balance", DoubleType(), True),
     StructField("credit_limit", DoubleType(), True),
     StructField("is_active", BooleanType(), False),
-    StructField("created_at", DateType(), True),
-    StructField("updated_at", DateType(), True)
+    StructField("created_at", DateType(), True)
 ])
 
 source_path = f"abfss://bronze@{STORAGE_ACCOUNT_NAME}.dfs.core.windows.net/raw/customers/customers.json"
