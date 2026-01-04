@@ -9,7 +9,7 @@ NUM_MERCHANTS = 5000
 NUM_TRANSACTIONS = 1000000
 OUTPUT_DIR = Path("data")
 
-fake = Faker(['es_PE'])
+fake = Faker(['es_MX'])
 random.seed(42)
 np.random.seed(42)
 
@@ -24,23 +24,40 @@ def generate_peruvian_ip():
     prefix = random.choice(prefixes)
     return f"{prefix}.{random.randint(0, 255)}.{random.randint(1, 254)}"
 
+def generate_dni(birth_date):
+    birth_year = birth_date.year
+    if birth_year <= 1965:
+        dni = random.randint(10000000,25000000)
+    elif birth_year <= 1975:
+        dni = random.randint(20000000,35000000)
+    elif birth_year <= 1985:
+        dni = random.randint(30000000, 49999999)
+    elif birth_year <= 1995:
+        dni = random.randint(50000000, 69999999)
+    elif birth_year <= 2005:
+        dni = random.randint(70000000, 79999999)
+    else:
+        dni = random.randint(80000000, 82000000)
+    return f"{dni:08d}"
+
 def generate_customers(n: int=NUM_CUSTOMERS) -> pd.DataFrame:
     customers = []
     for i in range(n):
         reg_date = fake.date_between(start_date='-2y', end_date='-1y')
+        birth_date = fake.date_of_birth(minimum_age=18, maximum_age=61)
+        
         customers.append({
             'customer_id': f'CUST{i:08d}',
             'first_name': fake.first_name(),
             'last_name': fake.last_name(),
             'email':fake.email(),
             'phone': f"+51 9{random.randint(10000000, 99999999)}",
-            'dni': fake.random_number(digits=8,fix_len=True),
-            'date_of_birth': fake.date_of_birth(minimum_age=18, maximum_age=70),
+            'dni': generate_dni(birth_date),
+            'date_of_birth': birth_date,
             'registration_date': reg_date,
             'city': 'Lima',
             'district': random.choice([
-                'San Isidro', 'San Borja', 'Jesús María'
-            ]),
+                'San Isidro', 'San Borja', 'Jesús María' ]),
             'country': 'Peru',
             'customer_segment': random.choices(
                 ['VIP', 'Premium', 'Standard', 'Basic'],

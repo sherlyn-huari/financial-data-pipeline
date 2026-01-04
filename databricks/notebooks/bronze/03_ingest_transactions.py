@@ -2,14 +2,12 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp, input_file_name, lit
 from pyspark.sql.types import StructType, StructField, StringType, DoubleType, IntegerType, DateType, BooleanType
 import os
-import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-if os.path.exists('/Workspace'):
-    sys.path.insert(0, '/Workspace/Repos/databricks/libs')
-else:
+if not os.path.exists('/Workspace'):
     libs_path = Path(__file__).parent.parent.parent / "libs"
+    import sys
     sys.path.insert(0, str(libs_path))
 
 from bronze_check import add_quality_flags_transactions, generate_quality_summary, print_quality_summary
@@ -61,6 +59,7 @@ bronze_transactions_with_quality = add_quality_flags_transactions(bronze_transac
 
 quality_summary = generate_quality_summary(bronze_transactions_with_quality)
 print_quality_summary(quality_summary)
+
 (bronze_transactions_with_quality.write
     .format('delta')
     .mode('overwrite')
