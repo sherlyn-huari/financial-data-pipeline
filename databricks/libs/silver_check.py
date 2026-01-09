@@ -84,7 +84,7 @@ TRANSACTION_VALIDATION_RULES = [
     ValidationRule(
         column='currency',
         check_name='invalid_currency',
-        validation_expr=lambda col: col.isNotNull() & ~col.isin(['PEN', 'USD', 'EUR'])
+        validation_expr=lambda col: col.isNotNull() & ~col.isin(['PEN', 'USD'])
     ),
     ValidationRule(
         column='channel',

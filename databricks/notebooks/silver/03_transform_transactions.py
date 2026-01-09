@@ -30,7 +30,7 @@ silver_transactions = (bronze_df
     .filter(col("merchant_id").isNotNull())
     .filter(col("amount") > 0)
     .filter(col("status").isin(['pending', 'completed', 'failed', 'cancelled']))
-    .filter(col("currency").isin(['PEN', 'USD', 'EUR']))
+    .filter(col("currency").isin(['PEN', 'USD']))
     .filter(col("channel").isin(['online', 'mobile', 'atm', 'branch', 'pos', 'agent']))
     .withColumn("transaction_date", to_timestamp(col("transaction_date")))
     .withColumn("processed_timestamp", current_timestamp())
