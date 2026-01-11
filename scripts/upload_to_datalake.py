@@ -11,6 +11,7 @@ load_dotenv()
 STORAGE_ACCOUNT_NAME = os.getenv("STORAGE_ACCOUNT_NAME")
 DATA_DIR = Path("data")
 
+
 def get_blob_service_client():
     try:
         credential = DefaultAzureCredential()
@@ -18,12 +19,12 @@ def get_blob_service_client():
         return BlobServiceClient(account_url, credential=credential)
     except Exception as e:
         print(f"DefaultAzureCredential failed: {e}")
-        
         print("Trying connection string")
         conn_str = build_connection_string_from_azure()
         if not conn_str:
             raise RuntimeError("All authentication methods failed")
         return BlobServiceClient.from_connection_string(conn_str)
+
 
 def build_connection_string_from_azure() -> Optional[str]:
     subscription_id = os.getenv("AZURE_SUBSCRIPTION_ID")
@@ -64,7 +65,8 @@ def build_connection_string_from_azure() -> Optional[str]:
     except Exception as e:
         print(f"Failed to derive connection string via ARM: {e}")
         return None
-    
+
+
 def upload_file(blob_service_client, container_name, local_path, blob_path):
     try:
         blob_client = blob_service_client.get_blob_client(
@@ -81,13 +83,14 @@ def upload_file(blob_service_client, container_name, local_path, blob_path):
     except Exception as e:
         print(f" Failed to upload {blob_path}: {e}")
         return False
-    
+   
+
 def main():
     print("Azure Data Lake Uploader")
 
     if not STORAGE_ACCOUNT_NAME:
         print("STORAGE_ACCOUNT_NAME not set in environment")
-        return 
+        return None
     
     blob_service_client = get_blob_service_client()
     print("Authentication successful")
@@ -124,7 +127,6 @@ def main():
                 f"raw/transactions/{trans_file.name}"
             )
     print("Upload complete")
-
 
 
 if __name__ == "__main__":

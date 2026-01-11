@@ -1,0 +1,20 @@
+[flake8]
+
+exclude =
+    .git,
+    __pycache__,
+    venv,
+    .venv,
+    databricks/notebooks/
+
+max-line-length = 127
+
+max-complexity = 10
+
+# Ignore specific errors
+# E128: continuation line under-indented (common in PySpark chains)
+# E203: whitespace before ':'
+# E402: module level import not at top (needed for Databricks/Spark imports)
+# E712: comparison to True/False (common in PySpark column expressions)
+# W503/W504: line break before/after binary operator
+ignore = E128,E203,E402,E712,W503,W504
