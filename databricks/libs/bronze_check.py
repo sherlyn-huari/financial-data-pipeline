@@ -4,6 +4,7 @@ from pyspark.sql.types import ArrayType, StringType
 from typing import List, Callable, Any
 from dataclasses import dataclass
 
+
 @dataclass
 class ValidationRule:
     column: str
@@ -62,7 +63,7 @@ def add_quality_flags(df: DataFrame, validation_rules: List[ValidationRule]) -> 
     return (df
             .withColumn('quality_issues', quality_issues)
             .withColumn('is_valid', F.size(F.col('quality_issues')) == 0)
-    )
+        )
 
 
 def add_quality_flags_customers(df: DataFrame) -> DataFrame:
